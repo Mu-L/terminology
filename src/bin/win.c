@@ -2153,9 +2153,7 @@ _cb_win_mouse_move(void *data,
 static Eina_Bool
 _config_font_size_set(Term *term, void *data EINA_UNUSED)
 {
-   Config *config = termio_config_get(term->termio);
-
-   termio_font_size_set(term->termio, config->font.size);
+   termio_font_update(term->termio);
    return ECORE_CALLBACK_PASS_ON;
 }
 
