@@ -2681,47 +2681,52 @@ termio_internal_render(Termio *sd,
                             italic = 0;
                          }
 
-                       if ((tc[x].codepoint != codepoint) ||
-                           (tc[x].bold != bold) ||
-                           (tc[x].italic != italic) ||
-                           (tc[x].fg != fg) ||
-                           (tc[x].bg != bg) ||
-                           (tc[x].fg_extended != fgext) ||
-                           (tc[x].bg_extended != bgext) ||
-                           (tc[x].underline != cells[x].att.underline) ||
-                           (tc[x].strikethrough != cells[x].att.strike))
+                       Eina_Bool cell_changed =
+                          (tc[x].codepoint != codepoint) ||
+                          (tc[x].bold != bold) ||
+                          (tc[x].italic != italic) ||
+                          (tc[x].fg != fg) ||
+                          (tc[x].bg != bg) ||
+                          (tc[x].fg_extended != fgext) ||
+                          (tc[x].bg_extended != bgext) ||
+                          (tc[x].underline != cells[x].att.underline) ||
+                          (tc[x].strikethrough != cells[x].att.strike) ||
+                          (tc[x].double_width != cells[x].att.dblwidth);
+
+                       if (cell_changed)
                          {
                             if (ch1 < 0)
                               ch1 = x;
                             ch2 = x;
+
+                            tc[x].fg_extended = fgext;
+                            tc[x].bg_extended = bgext;
+                            tc[x].underline = cells[x].att.underline;
+                            tc[x].strikethrough = cells[x].att.strike;
+                            if (sd->config->font.bolditalic)
+                              {
+                                 tc[x].bold = cells[x].att.bold;
+                                 tc[x].italic = cells[x].att.italic;
+                              }
+                            else
+                              {
+                                 tc[x].bold = 0;
+                                 tc[x].italic = 0;
+                              }
+                            tc[x].double_width = cells[x].att.dblwidth;
+                            tc[x].fg = fg;
+                            tc[x].bg = bg;
+                            if (tc[x].codepoint != codepoint &&
+                                EINA_UNLIKELY(l1 >= 0 && x >= l1 && x <= l2))
+                              {
+                                 termio_remove_links(sd);
+                                 l1 = l2 = -1;
+                              }
+                            tc[x].codepoint = codepoint;
+                            if ((tc[x].double_width) && (tc[x].codepoint == 0) &&
+                                (ch2 == x - 1))
+                              ch2 = x;
                          }
-                       tc[x].fg_extended = fgext;
-                       tc[x].bg_extended = bgext;
-                       tc[x].underline = cells[x].att.underline;
-                       tc[x].strikethrough = cells[x].att.strike;
-                       if (sd->config->font.bolditalic)
-                         {
-                            tc[x].bold = cells[x].att.bold;
-                            tc[x].italic = cells[x].att.italic;
-                         }
-                       else
-                         {
-                            tc[x].bold = 0;
-                            tc[x].italic = 0;
-                         }
-                       tc[x].double_width = cells[x].att.dblwidth;
-                       tc[x].fg = fg;
-                       tc[x].bg = bg;
-                       if (tc[x].codepoint != codepoint &&
-                           EINA_UNLIKELY(l1 >= 0 && x >= l1 && x <= l2))
-                         {
-                            termio_remove_links(sd);
-                            l1 = l2 = -1;
-                         }
-                       tc[x].codepoint = codepoint;
-                       if ((tc[x].double_width) && (tc[x].codepoint == 0) &&
-                           (ch2 == x - 1))
-                         ch2 = x;
                        // cells[x].att.blink
                        // cells[x].att.blink2
                        if (u && (*u != codepoint) &&
@@ -2733,12 +2738,14 @@ termio_internal_render(Termio *sd,
                     }
                }
           }
-        evas_object_textgrid_cellrow_set(sd->grid.obj, y, tc);
         /* only bothering to keep 1 change span per row - not worth doing
          * more really */
         if (ch1 >= 0)
-          evas_object_textgrid_update_add(sd->grid.obj, ch1, y,
-                                          ch2 - ch1 + 1, 1);
+          {
+             evas_object_textgrid_cellrow_set(sd->grid.obj, y, tc);
+             evas_object_textgrid_update_add(sd->grid.obj, ch1, y,
+                                             ch2 - ch1 + 1, 1);
+          }
      }
 
    preedit_str = term_preedit_str_get(sd->term);
