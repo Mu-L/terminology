@@ -1547,18 +1547,6 @@ termpty_block_insert(Termpty *ty, int ch, Termblock *blk)
    ty->block.expecting = eina_list_append(ty->block.expecting, ex);
 }
 
-int
-termpty_block_id_get(const Termcell *cell, int *x, int *y)
-{
-   int id;
-
-   if (!(cell->codepoint & 0x80000000)) return -1;
-   id = (cell->codepoint >> 18) & 0x1fff;
-   *x = (cell->codepoint >> 9) & 0x1ff;
-   *y = cell->codepoint & 0x1ff;
-   return id;
-}
-
 Termblock *
 termpty_block_get(const Termpty *ty, int id)
 {

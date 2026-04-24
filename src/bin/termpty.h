@@ -309,7 +309,17 @@ pid_t      termpty_pid_get(const Termpty *ty);
 void       termpty_block_free(Termblock *tb);
 Termblock *termpty_block_new(Termpty *ty, int w, int h, const char *path, const char *link);
 void       termpty_block_insert(Termpty *ty, int ch, Termblock *blk);
-int        termpty_block_id_get(const Termcell *cell, int *x, int *y);
+static inline int
+termpty_block_id_get(const Termcell *cell, int *x, int *y)
+{
+   int id;
+
+   if (!(cell->codepoint & 0x80000000)) return -1;
+   id = (cell->codepoint >> 18) & 0x1fff;
+   *x = (cell->codepoint >> 9) & 0x1ff;
+   *y = cell->codepoint & 0x1ff;
+   return id;
+}
 Termblock *termpty_block_get(const Termpty *ty, int id);
 void       termpty_block_chid_update(Termpty *ty, Termblock *blk);
 Termblock *termpty_block_chid_get(const Termpty *ty, const char *chid);
